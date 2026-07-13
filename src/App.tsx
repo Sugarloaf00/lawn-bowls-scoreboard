@@ -720,10 +720,8 @@ export default function App() {
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
 
-      // Host is the source of truth — never apply incoming Firestore data
-      // back onto the host's state. Doing so causes jumpy scoring because
-      // every push triggers a snapshot which then "resets" local state.
-      if (isHostRef.current) return;
+      // Apply incoming Firestore data for both host and spectator
+      // if it differs from the last sent/received state.
 
       const data = snapshot.data();
 
@@ -770,7 +768,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionCode]);
 
-  // Debounced push to Firestore when local states change (host only)
+  // Debounced push to Firestore when local states change (host and spectator)
   useEffect(() => {
     if (!sessionCode) return;
 
@@ -1154,14 +1152,6 @@ export default function App() {
     newEnds[index][otherPlayer] = '';
     
     setEnds(newEnds);
-
-    // Auto-advance to next end after 1.2s of score entry inactivity
-    if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current);
-    autoAdvanceTimeout.current = setTimeout(() => {
-      if (index < ends.length - 1) {
-        setActiveRow(index + 1);
-      }
-    }, 1200);
   };
 
   const handleDecrement = (index: number, player: 'player1' | 'player2', e: React.MouseEvent) => {
