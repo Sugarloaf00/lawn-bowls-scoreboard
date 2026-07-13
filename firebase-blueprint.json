@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Match": {
+      "title": "Match",
+      "description": "A lawn bowls match record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who owns this match" },
+        "date": { "type": "string", "description": "ISO date string" },
+        "config": {
+          "type": "object",
+          "properties": {
+            "matchType": { "type": "string", "enum": ["individual", "team"] },
+            "player1Name": { "type": "string" },
+            "player2Name": { "type": "string" },
+            "player1Avatar": { "type": "string" },
+            "player2Avatar": { "type": "string" },
+            "numEnds": { "type": "number" }
+          },
+          "required": ["matchType", "player1Name", "player2Name", "numEnds"]
+        },
+        "p1Total": { "type": "number" },
+        "p2Total": { "type": "number" },
+        "p1EndsWon": { "type": "number" },
+        "p2EndsWon": { "type": "number" },
+        "ends": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "player1": { "type": ["number", "string"] },
+              "player2": { "type": ["number", "string"] }
+            }
+          }
+        }
+      },
+      "required": ["userId", "date", "config", "p1Total", "p2Total", "p1EndsWon", "p2EndsWon"]
+    }
+  },
+  "firestore": {
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Stores completed match histories for a user."
+    }
+  }
+}

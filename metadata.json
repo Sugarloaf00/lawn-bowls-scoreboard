@@ -1,0 +1,8 @@
+{
+  "name": "Lawn Bowls Scoreboard",
+  "description": "A scoreboard for a lawn bowls match between Brod and Amigo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

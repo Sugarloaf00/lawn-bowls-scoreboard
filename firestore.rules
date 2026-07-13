@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    function isValidMatch(data) {
+      return data.keys().hasAll(['userId', 'date', 'config', 'p1Total', 'p2Total', 'p1EndsWon', 'p2EndsWon']) &&
+             data.keys().size() <= 8 &&
+             data.userId == request.auth.uid &&
+             data.date is string && data.date.size() <= 50 &&
+             data.config is map &&
+             data.config.keys().hasAll(['matchType', 'player1Name', 'player2Name', 'numEnds']) &&
+             data.config.matchType in ['individual', 'team'] &&
+             data.config.player1Name is string && data.config.player1Name.size() <= 100 &&
+             data.config.player2Name is string && data.config.player2Name.size() <= 100 &&
+             data.config.numEnds is number &&
+             data.p1Total is number &&
+             data.p2Total is number &&
+             data.p1EndsWon is number &&
+             data.p2EndsWon is number &&
+             (!('ends' in data.keys()) || (data.ends is list && data.ends.size() <= 100));
+    }
+
+    match /matches/{matchId} {
+      allow get: if isSignedIn() && isValidId(matchId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(matchId) && isValidMatch(incoming());
+      allow delete: if isSignedIn() && isValidId(matchId) && existing().userId == request.auth.uid;
+      allow update: if false; // Historical matches don't need updates
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /live_sessions/{sessionId} {
+      allow read, write: if true;
+    }
+  }
+}
