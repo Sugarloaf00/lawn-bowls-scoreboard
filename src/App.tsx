@@ -725,12 +725,18 @@ export default function App() {
 
       const data = snapshot.data();
 
-      // Build a fingerprint to skip duplicate snapshots
+      // Normalize null and empty string score values to prevent mismatch lag loops
+      const normalizedEnds = data.ends ? data.ends.map((e: any) => ({
+        player1: e.player1 === null || e.player1 === undefined ? '' : String(e.player1),
+        player2: e.player2 === null || e.player2 === undefined ? '' : String(e.player2),
+      })) : [];
+
       const remoteFingerprint = JSON.stringify({
-        ends: data.ends,
+        ends: normalizedEnds,
         activeRow: data.activeRow,
         currentBowlIndex: data.currentBowlIndex,
         startTeamForCurrentEnd: data.startTeamForCurrentEnd,
+        gameOver: data.gameOver || false
       });
 
       if (remoteFingerprint === lastRemoteSnapshot.current) return;
@@ -757,7 +763,18 @@ export default function App() {
       if (data.gameOver === true) {
         setGameOver(true);
         setShowSummaryModal(true);
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+
+        // Play victory.mp3 custom sound for spectators
+        const victoryAudio = new Audio('/victory.mp3');
+        victoryAudio.volume = isMuted ? 0 : 0.8;
+        victoryAudio.play().catch(e => console.error("Victory audio play failed:", e));
+
+        confetti({ 
+          particleCount: 150, 
+          spread: 70, 
+          origin: { y: 0.6 },
+          colors: ['#059669', '#34d399', '#fcd34d', '#fbbf24']
+        });
       }
     }, (err) => {
       console.error("Firestore onSnapshot error:", err);
